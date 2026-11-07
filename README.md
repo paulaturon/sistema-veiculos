@@ -1,112 +1,116 @@
 # Sistema Automotivo – Gestão de Estoque de Veículos
 
-CRUD orientado a objetos em **Java 17 + Spring Boot 3 + MySQL**, com API REST e uma tela web simples.
+Sistema CRUD orientado a objetos para gestão do estoque de veículos de uma concessionária, desenvolvido em **Java 17**, **Spring Boot 3** e **MySQL**, com API REST e interface web.
+
+**Autora:** Paula Turon de Oliveira
+**Disciplina:** Object Oriented Programming
 
 ---
 
-## PASSO A PASSO PARA RODAR
+## Funcionalidades
 
-### Passo 1 – Criar o banco no MySQL
-1. Abra o **MySQL Workbench** e conecte no servidor local (usuário `root`).
-2. Menu **File → Open SQL Script** → escolha `database/sistema_veiculos.sql`.
-3. Clique no **raio ⚡** (Execute) para rodar o script inteiro.
-4. Na lateral (Schemas), clique no botão de atualizar: deve aparecer `sistema_veiculos` com as tabelas `marca`, `modelo` e `veiculo`.
+- **Cadastro de veículos**: modelo, marca, ano, cor, preço, quilometragem e status.
+- **Cadastro de marcas e modelos**: cada veículo está associado a um modelo, e cada modelo a uma marca.
+- **Consulta e filtros**: por marca, modelo, tipo, status, faixa de preço e faixa de ano.
+- **Atualização**: edição completa ou parcial (preço, quilometragem, status), além da ação de venda.
+- **Remoção**: exclusão de veículos vendidos ou descontinuados.
+- **Validações e regras de negócio**: campos obrigatórios, valores não negativos, quilometragem que não pode diminuir e proteção contra exclusão de marcas ou modelos em uso.
 
-> O script apaga e recria o banco `sistema_veiculos`. Pode rodar quantas vezes quiser para "resetar" os dados.
+## Tecnologias
 
-### Passo 2 – Abrir o projeto no IntelliJ (do jeito certo)
-1. Descompacte o `.zip` numa pasta fácil, ex.: `C:\projetos\sistema-veiculos`.
-2. No IntelliJ: **File → Open** → selecione a pasta **`sistema-veiculos`** (a que tem o `pom.xml` dentro) → OK.
-3. Se perguntar *"Trust project?"* → **Trust Project**. Se perguntar *"Open as Maven project?"* → **Sim**.
-4. Espere a barra de progresso lá embaixo terminar (ele baixa as bibliotecas do Spring – pode levar alguns minutos na primeira vez).
+| Tecnologia | Uso |
+|---|---|
+| Java 17 | Linguagem principal |
+| Spring Boot 3 (Web, Data JPA, Validation) | API REST, persistência e validação |
+| Hibernate / JPA | Mapeamento objeto-relacional |
+| MySQL 8 | Banco de dados relacional |
+| Maven | Gerenciamento de dependências e build |
+| HTML, CSS e JavaScript | Interface web que consome a API |
 
-> **Não crie as pastas na mão.** Quem diz ao IntelliJ que isso é um projeto Spring é o `pom.xml`.
+## Arquitetura
 
-### Passo 3 – Conferir o JDK
-**File → Project Structure → Project → SDK**: precisa ser **17 ou superior** (17, 21...).
-Se não tiver nenhum, clique em **Add SDK → Download JDK** → escolha a versão 21 (ex.: Eclipse Temurin).
-
-### Passo 4 – Colocar a senha do MySQL
-Abra `src/main/resources/application.properties` e troque:
-```
-spring.datasource.password=SUA_SENHA_AQUI
-```
-pela senha que você criou ao instalar o MySQL.
-
-### Passo 5 – Rodar
-Abra `src/main/java/com/concessionaria/sistemaveiculos/SistemaVeiculosApplication.java` e clique no **▶ verde** ao lado de `public class` (ou do `main`) → **Run**.
-
-Funcionou se aparecer no final do console (aba **Run**, parte de baixo):
-```
-Tomcat started on port 8080 (http)
-Started SistemaVeiculosApplication in X seconds
-```
-
-### Passo 6 – Usar
-- Tela do sistema: **http://localhost:8080**
-- API pura (JSON): **http://localhost:8080/api/veiculos**
-
----
-
-## ONDE VER O ERRO
-
-O erro aparece na **janela Run** (parte de baixo do IntelliJ, abre sozinha quando você roda).
-Role até o **fim** e procure a última linha que começa com `Caused by:` – é ela que diz o motivo real.
-
-| Mensagem no console | O que significa | Como resolver |
-|---|---|---|
-| `Access denied for user 'root'@'localhost'` | Senha errada | Corrija `spring.datasource.password` |
-| `Communications link failure` | MySQL desligado | Inicie o serviço MySQL (Windows: "Serviços" → MySQL80 → Iniciar) |
-| `Unknown database 'sistema_veiculos'` | Banco não criado | Rode o script do Passo 1 |
-| `Port 8080 was already in use` | Já tem algo rodando na 8080 | Pare a execução anterior (■ vermelho) ou troque `server.port=8081` |
-| `release version 17 not supported` / `invalid source release` | JDK antigo | Passo 3: use JDK 17 ou 21 |
-| `package org.springframework... does not exist` / imports em vermelho | Maven não carregou | Clique com o direito no `pom.xml` → **Maven → Reload project** |
-| Botão ▶ não aparece | Projeto aberto na pasta errada | Passo 2: abra a pasta que contém o `pom.xml` |
-
----
-
-## ESTRUTURA (arquitetura em camadas / MVC + REST)
+O projeto segue uma **arquitetura em camadas** (padrão MVC adaptado para API REST):
 
 ```
 src/main/java/com/concessionaria/sistemaveiculos
-├── SistemaVeiculosApplication.java   → inicia o sistema
-├── model/        → entidades (EntidadeBase, Marca, Modelo, Veiculo, enums)
-├── repository/   → acesso ao banco (Spring Data JPA)
-├── service/      → regras de negócio
-├── controller/   → endpoints REST
-├── dto/          → dados de entrada da API
-└── exception/    → tratamento de erros
+├── model/        Entidades de domínio (EntidadeBase, Marca, Modelo, Veiculo) e enums
+├── repository/   Acesso a dados com Spring Data JPA
+├── service/      Regras de negócio
+├── controller/   Endpoints REST
+├── dto/          Objetos de entrada da API
+└── exception/    Exceções e tratamento global de erros
 src/main/resources
-├── application.properties → configuração do banco
-└── static/index.html      → tela (frontend)
-database/sistema_veiculos.sql → modelo físico + dados de exemplo
+├── application.properties   Configuração da aplicação
+└── static/index.html        Interface web
+database/
+└── sistema_veiculos.sql     Modelo físico do banco e dados de exemplo
 ```
 
-## ENDPOINTS
+**Fluxo de uma requisição:** Interface web → Controller → Service → Repository → MySQL
 
-| Método | URL | O que faz |
+## Modelo de dados
+
+```
+MARCA (1) ──── (N) MODELO (1) ──── (N) VEICULO
+```
+
+- **marca**: id, nome, pais_origem, data_cadastro
+- **modelo**: id, nome, tipo, marca_id (FK), data_cadastro
+- **veiculo**: id, modelo_id (FK), ano, cor, preco, quilometragem, status, data_cadastro
+
+## Conceitos de POO aplicados
+
+- **Classes e objetos**: `Marca`, `Modelo` e `Veiculo` representam as entidades do domínio.
+- **Herança**: as entidades estendem a superclasse `EntidadeBase`, que concentra `id` e `dataCadastro`.
+- **Abstração**: `EntidadeBase` é uma classe abstrata.
+- **Encapsulamento**: atributos privados, com acesso por getters e setters.
+- **Comportamento**: métodos de negócio como `Veiculo.vender()` e `Veiculo.estaDisponivel()`.
+- **Associação**: Veículo → Modelo → Marca (`@ManyToOne`).
+- **Enumerações**: `TipoVeiculo` e `StatusVeiculo`.
+
+## Como executar
+
+**Pré-requisitos:** JDK 17 ou superior, MySQL 8 e Maven (ou uma IDE com Maven, como o IntelliJ IDEA).
+
+1. Execute o script `database/sistema_veiculos.sql` no MySQL.
+2. Em `src/main/resources/application.properties`, informe o usuário e a senha do MySQL.
+3. Execute a classe `SistemaVeiculosApplication`, ou rode `mvn spring-boot:run`.
+4. Acesse **http://localhost:8080**.
+
+## Endpoints da API
+
+| Método | Endpoint | Descrição |
 |---|---|---|
 | GET | `/api/marcas` | Lista marcas |
-| POST | `/api/marcas` | Cadastra marca `{"nome":"Ford","paisOrigem":"EUA"}` |
-| PUT / DELETE | `/api/marcas/{id}` | Edita / remove marca |
-| GET | `/api/modelos?marcaId=1` | Lista modelos (filtro opcional por marca) |
-| POST | `/api/modelos` | `{"nome":"Ka","tipo":"CARRO","marcaId":6}` |
-| PUT / DELETE | `/api/modelos/{id}` | Edita / remove modelo |
-| GET | `/api/veiculos` | Lista veículos – filtros: `marcaId, modeloId, tipo, status, precoMin, precoMax, anoMin, anoMax` |
-| GET | `/api/veiculos/{id}` | Busca um veículo |
-| POST | `/api/veiculos` | `{"modeloId":1,"ano":2023,"cor":"Preto","preco":120000,"quilometragem":0,"status":"DISPONIVEL"}` |
-| PUT | `/api/veiculos/{id}` | Atualiza todos os dados |
-| PATCH | `/api/veiculos/{id}` | Atualiza só preço/km/status `{"preco":115000}` |
-| PATCH | `/api/veiculos/{id}/vender` | Marca como VENDIDO |
-| DELETE | `/api/veiculos/{id}` | Remove do estoque |
+| GET | `/api/marcas/{id}` | Busca marca por id |
+| POST | `/api/marcas` | Cadastra marca |
+| PUT | `/api/marcas/{id}` | Atualiza marca |
+| DELETE | `/api/marcas/{id}` | Remove marca |
+| GET | `/api/modelos?marcaId=` | Lista modelos (filtro opcional por marca) |
+| POST | `/api/modelos` | Cadastra modelo |
+| PUT | `/api/modelos/{id}` | Atualiza modelo |
+| DELETE | `/api/modelos/{id}` | Remove modelo |
+| GET | `/api/veiculos` | Lista veículos com filtros opcionais |
+| GET | `/api/veiculos/{id}` | Busca veículo por id |
+| POST | `/api/veiculos` | Cadastra veículo |
+| PUT | `/api/veiculos/{id}` | Atualiza todos os dados do veículo |
+| PATCH | `/api/veiculos/{id}` | Atualiza preço, quilometragem e/ou status |
+| PATCH | `/api/veiculos/{id}/vender` | Registra a venda do veículo |
+| DELETE | `/api/veiculos/{id}` | Remove veículo |
 
-Exemplo de filtro: `http://localhost:8080/api/veiculos?status=DISPONIVEL&precoMax=140000&anoMin=2021`
+**Filtros disponíveis em `/api/veiculos`:** `marcaId`, `modeloId`, `tipo`, `status`, `precoMin`, `precoMax`, `anoMin`, `anoMax`
 
-## CONCEITOS DE POO APLICADOS
-- **Classes e objetos**: `Marca`, `Modelo`, `Veiculo`.
-- **Herança**: as três entidades estendem `EntidadeBase` (id e data de cadastro).
-- **Encapsulamento**: atributos `private` com getters/setters.
-- **Abstração**: `EntidadeBase` é `abstract` (não existe "entidade genérica" sozinha).
-- **Métodos de comportamento**: `Veiculo.vender()`, `Veiculo.estaDisponivel()`.
-- **Associação**: Veículo → Modelo → Marca (`@ManyToOne`).
-- **Enums**: `TipoVeiculo`, `StatusVeiculo`.
+Exemplo: `GET /api/veiculos?status=DISPONIVEL&precoMax=140000&anoMin=2021`
+
+Exemplo de cadastro:
+```
+POST /api/veiculos
+{
+  "modeloId": 1,
+  "ano": 2023,
+  "cor": "Preto",
+  "preco": 120000.00,
+  "quilometragem": 0,
+  "status": "DISPONIVEL"
+}
+```
