@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema Automotivo – Estoque de Veículos</title>
+<style>
+  :root { --azul:#1d4ed8; --azul-claro:#e0e7ff; --cinza:#f3f4f6; --borda:#d1d5db; --texto:#111827; --verm:#b91c1c; --verde:#15803d; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, Segoe UI, Arial, sans-serif; color:var(--texto); background:var(--cinza); }
+  header { background:var(--azul); color:#fff; padding:16px 24px; }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:4px 0 0; opacity:.85; font-size:13px; }
+  nav { display:flex; gap:4px; padding:0 24px; background:#fff; border-bottom:1px solid var(--borda); }
+  nav button { border:none; background:none; padding:12px 16px; font-size:14px; cursor:pointer; border-bottom:3px solid transparent; }
+  nav button.ativo { border-color:var(--azul); color:var(--azul); font-weight:600; }
+  main { padding:20px 24px; max-width:1200px; margin:auto; }
+  .card { background:#fff; border:1px solid var(--borda); border-radius:8px; padding:16px; margin-bottom:16px; }
+  .card h2 { margin:0 0 12px; font-size:16px; }
+  .grade { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:10px; align-items:end; }
+  label { font-size:12px; color:#4b5563; display:flex; flex-direction:column; gap:4px; }
+  input, select { padding:7px 8px; border:1px solid var(--borda); border-radius:6px; font-size:14px; }
+  button.btn { padding:8px 14px; border-radius:6px; border:1px solid var(--azul); background:var(--azul); color:#fff; cursor:pointer; font-size:14px; }
+  button.sec { background:#fff; color:var(--azul); }
+  button.peq { padding:4px 8px; font-size:12px; }
+  button.perigo { background:#fff; color:var(--verm); border-color:var(--verm); }
+  button.ok { background:#fff; color:var(--verde); border-color:var(--verde); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--borda); }
+  th { background:var(--azul-claro); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  td.num { text-align:right; font-variant-numeric: tabular-nums; }
+  .acoes { display:flex; gap:4px; flex-wrap:wrap; }
+  .tag { padding:2px 8px; border-radius:99px; font-size:12px; font-weight:600; }
+  .DISPONIVEL { background:#dcfce7; color:#166534; }
+  .RESERVADO  { background:#fef9c3; color:#854d0e; }
+  .VENDIDO    { background:#e5e7eb; color:#374151; }
+  .MANUTENCAO { background:#fee2e2; color:#991b1b; }
+  #aviso { position:fixed; right:20px; bottom:20px; padding:12px 16px; border-radius:8px; color:#fff; display:none; max-width:380px; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+  .oculto { display:none; }
+  .total { font-size:13px; color:#4b5563; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sistema Automotivo – Gestão de Estoque de Veículos</h1>
+  <p>Cadastro, consulta, filtro, atualização e remoção de veículos</p>
+</header>
+
+<nav>
+  <button class="ativo" data-aba="veiculos">Veículos</button>
+  <button data-aba="modelos">Modelos</button>
+  <button data-aba="marcas">Marcas</button>
+</nav>
+
+<main>
+  <!-- ===================== VEÍCULOS ===================== -->
+  <section id="aba-veiculos">
+    <div class="card">
+      <h2 id="titulo-form-veiculo">Cadastrar veículo</h2>
+      <form id="form-veiculo" class="grade">
+        <input type="hidden" id="v-id">
+        <label>Marca <select id="v-marca" required></select></label>
+        <label>Modelo <select id="v-modelo" required></select></label>
+        <label>Ano <input type="number" id="v-ano" min="1950" max="2100" required></label>
+        <label>Cor <input type="text" id="v-cor" required></label>
+        <label>Preço (R$) <input type="number" id="v-preco" min="0" step="0.01" required></label>
+        <label>Quilometragem <input type="number" id="v-km" min="0" required></label>
+        <label>Status <select id="v-status"></select></label>
+        <div class="acoes">
+          <button class="btn" type="submit">Salvar</button>
+          <button class="btn sec" type="button" id="v-cancelar">Limpar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Consultar e filtrar</h2>
+      <form id="form-filtro" class="grade">
+        <label>Marca <select id="f-marca"></select></label>
+        <label>Modelo <select id="f-modelo"></select></label>
+        <label>Tipo <select id="f-tipo"></select></label>
+        <label>Status <select id="f-status"></select></label>
+        <label>Preço mín. <input type="number" id="f-precoMin" min="0"></label>
+        <label>Preço máx. <input type="number" id="f-precoMax" min="0"></label>
+        <label>Ano mín. <input type="number" id="f-anoMin"></label>
+        <label>Ano máx. <input type="number" id="f-anoMax"></label>
+        <div class="acoes">
+          <button class="btn" type="submit">Filtrar</button>
+          <button class="btn sec" type="button" id="f-limpar">Limpar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="total" id="total-veiculos"></div>
+      <table>
+        <thead><tr><th>ID</th><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Ano</th><th>Cor</th><th>Preço</th><th>Km</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tabela-veiculos"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== MODELOS ===================== -->
+  <section id="aba-modelos" class="oculto">
+    <div class="card">
+      <h2 id="titulo-form-modelo">Cadastrar modelo</h2>
+      <form id="form-modelo" class="grade">
+        <input type="hidden" id="m-id">
+        <label>Nome <input type="text" id="m-nome" required></label>
+        <label>Tipo <select id="m-tipo" required></select></label>
+        <label>Marca <select id="m-marca" required></select></label>
+        <div class="acoes">
+          <button class="btn" type="submit">Salvar</button>
+          <button class="btn sec" type="button" id="m-cancelar">Limpar</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>ID</th><th>Modelo</th><th>Tipo</th><th>Marca</th><th>Ações</th></tr></thead>
+        <tbody id="tabela-modelos"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== MARCAS ===================== -->
+  <section id="aba-marcas" class="oculto">
+    <div class="card">
+      <h2 id="titulo-form-marca">Cadastrar marca</h2>
+      <form id="form-marca" class="grade">
+        <input type="hidden" id="ma-id">
+        <label>Nome <input type="text" id="ma-nome" required></label>
+        <label>País de origem <input type="text" id="ma-pais"></label>
+        <div class="acoes">
+          <button class="btn" type="submit">Salvar</button>
+          <button class="btn sec" type="button" id="ma-cancelar">Limpar</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>ID</th><th>Marca</th><th>País de origem</th><th>Ações</th></tr></thead>
+        <tbody id="tabela-marcas"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="aviso"></div>
+
+<script>
+const API = "/api";
+const TIPOS = ["CARRO", "MOTO", "CAMINHONETE", "SUV", "CAMINHAO"];
+const STATUS = ["DISPONIVEL", "RESERVADO", "VENDIDO", "MANUTENCAO"];
+let marcas = [], modelos = [];
+
+const $ = id => document.getElementById(id);
+const moeda = v => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+function aviso(msg, erro = false) {
+  const el = $("aviso");
+  el.textContent = msg;
+  el.style.background = erro ? "#b91c1c" : "#15803d";
+  el.style.display = "block";
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = "none", 3500);
+}
+
+// Chamada genérica à API REST
+async function api(caminho, metodo = "GET", corpo) {
+  const opcoes = { method: metodo, headers: { "Content-Type": "application/json" } };
+  if (corpo !== undefined) opcoes.body = JSON.stringify(corpo);
+  const resp = await fetch(API + caminho, opcoes);
+  if (resp.status === 204) return null;
+  const dados = await resp.json().catch(() => null);
+  if (!resp.ok) throw new Error(dados?.erro || ("Erro " + resp.status));
+  return dados;
+}
+
+function opcoes(select, itens, texto, valor, vazio) {
+  select.innerHTML = (vazio !== undefined ? `<option value="">${vazio}</option>` : "") +
+    itens.map(i => `<option value="${esc(valor(i))}">${esc(texto(i))}</option>`).join("");
+}
+
+// ---------- Abas ----------
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("ativo", x === b));
+  ["veiculos", "modelos", "marcas"].forEach(a => $("aba-" + a).classList.toggle("oculto", a !== b.dataset.aba));
+});
+
+// ---------- Carregamento ----------
+async function carregarMarcasModelos() {
+  [marcas, modelos] = await Promise.all([api("/marcas"), api("/modelos")]);
+  opcoes($("v-marca"), marcas, m => m.nome, m => m.id);
+  opcoes($("m-marca"), marcas, m => m.nome, m => m.id);
+  opcoes($("f-marca"), marcas, m => m.nome, m => m.id, "Todas");
+  atualizarModelosDoForm();
+  atualizarModelosDoFiltro();
+  desenharMarcas();
+  desenharModelos();
+}
+
+function atualizarModelosDoForm(selecionado) {
+  const marcaId = Number($("v-marca").value);
+  opcoes($("v-modelo"), modelos.filter(m => m.marca.id === marcaId), m => m.nome, m => m.id);
+  if (selecionado) $("v-modelo").value = selecionado;
+}
+function atualizarModelosDoFiltro() {
+  const marcaId = Number($("f-marca").value);
+  const lista = marcaId ? modelos.filter(m => m.marca.id === marcaId) : modelos;
+  opcoes($("f-modelo"), lista, m => m.nome + " (" + m.marca.nome + ")", m => m.id, "Todos");
+}
+$("v-marca").onchange = () => atualizarModelosDoForm();
+$("f-marca").onchange = atualizarModelosDoFiltro;
+
+// ---------- Veículos ----------
+async function carregarVeiculos() {
+  const params = new URLSearchParams();
+  ["marca", "modelo", "tipo", "status", "precoMin", "precoMax", "anoMin", "anoMax"].forEach(c => {
+    const v = $("f-" + c).value;
+    if (v) params.append(["marca", "modelo"].includes(c) ? c + "Id" : c, v);
+  });
+  try {
+    const lista = await api("/veiculos?" + params.toString());
+    $("total-veiculos").textContent = lista.length + " veículo(s) encontrado(s)";
+    $("tabela-veiculos").innerHTML = lista.map(v => `
+      <tr>
+        <td>${v.id}</td><td>${esc(v.marca.nome)}</td><td>${esc(v.modelo.nome)}</td><td>${v.modelo.tipo}</td>
+        <td>${v.ano}</td><td>${esc(v.cor)}</td><td class="num">${moeda(v.preco)}</td>
+        <td class="num">${Number(v.quilometragem).toLocaleString("pt-BR")}</td>
+        <td><span class="tag ${v.status}">${v.status}</span></td>
+        <td class="acoes">
+          <button class="btn sec peq" onclick="editarVeiculo(${v.id})">Editar</button>
+          ${v.status !== "VENDIDO" ? `<button class="btn ok peq" onclick="venderVeiculo(${v.id})">Vender</button>` : ""}
+          <button class="btn perigo peq" onclick="removerVeiculo(${v.id})">Excluir</button>
+        </td>
+      </tr>`).join("") || `<tr><td colspan="10">Nenhum veículo encontrado.</td></tr>`;
+  } catch (e) { aviso(e.message, true); }
+}
+
+$("form-veiculo").onsubmit = async ev => {
+  ev.preventDefault();
+  const id = $("v-id").value;
+  const corpo = {
+    modeloId: Number($("v-modelo").value), ano: Number($("v-ano").value), cor: $("v-cor").value,
+    preco: Number($("v-preco").value), quilometragem: Number($("v-km").value), status: $("v-status").value
+  };
+  try {
+    if (id) { await api("/veiculos/" + id, "PUT", corpo); aviso("Veículo atualizado!"); }
+    else    { await api("/veiculos", "POST", corpo);      aviso("Veículo cadastrado!"); }
+    limparFormVeiculo();
+    carregarVeiculos();
+  } catch (e) { aviso(e.message, true); }
+};
+
+async function editarVeiculo(id) {
+  const v = await api("/veiculos/" + id);
+  $("v-id").value = v.id;
+  $("v-marca").value = v.marca.id;
+  atualizarModelosDoForm(v.modelo.id);
+  $("v-ano").value = v.ano; $("v-cor").value = v.cor; $("v-preco").value = v.preco;
+  $("v-km").value = v.quilometragem; $("v-status").value = v.status;
+  $("titulo-form-veiculo").textContent = "Editar veículo #" + v.id;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+async function venderVeiculo(id) {
+  try { await api("/veiculos/" + id + "/vender", "PATCH"); aviso("Veículo marcado como VENDIDO."); carregarVeiculos(); }
+  catch (e) { aviso(e.message, true); }
+}
+async function removerVeiculo(id) {
+  if (!confirm("Remover o veículo #" + id + " do estoque?")) return;
+  try { await api("/veiculos/" + id, "DELETE"); aviso("Veículo removido."); carregarVeiculos(); }
+  catch (e) { aviso(e.message, true); }
+}
+function limparFormVeiculo() {
+  $("form-veiculo").reset(); $("v-id").value = "";
+  $("titulo-form-veiculo").textContent = "Cadastrar veículo";
+  atualizarModelosDoForm();
+}
+$("v-cancelar").onclick = limparFormVeiculo;
+$("form-filtro").onsubmit = ev => { ev.preventDefault(); carregarVeiculos(); };
+$("f-limpar").onclick = () => { $("form-filtro").reset(); atualizarModelosDoFiltro(); carregarVeiculos(); };
+
+// ---------- Modelos ----------
+function desenharModelos() {
+  $("tabela-modelos").innerHTML = modelos.map(m => `
+    <tr><td>${m.id}</td><td>${esc(m.nome)}</td><td>${m.tipo}</td><td>${esc(m.marca.nome)}</td>
+      <td class="acoes">
+        <button class="btn sec peq" onclick="editarModelo(${m.id})">Editar</button>
+        <button class="btn perigo peq" onclick="removerModelo(${m.id})">Excluir</button>
+      </td></tr>`).join("") || `<tr><td colspan="5">Nenhum modelo cadastrado.</td></tr>`;
+}
+$("form-modelo").onsubmit = async ev => {
+  ev.preventDefault();
+  const id = $("m-id").value;
+  const corpo = { nome: $("m-nome").value, tipo: $("m-tipo").value, marcaId: Number($("m-marca").value) };
+  try {
+    if (id) await api("/modelos/" + id, "PUT", corpo); else await api("/modelos", "POST", corpo);
+    aviso("Modelo salvo!"); limparFormModelo(); await carregarMarcasModelos(); carregarVeiculos();
+  } catch (e) { aviso(e.message, true); }
+};
+function editarModelo(id) {
+  const m = modelos.find(x => x.id === id);
+  $("m-id").value = m.id; $("m-nome").value = m.nome; $("m-tipo").value = m.tipo; $("m-marca").value = m.marca.id;
+  $("titulo-form-modelo").textContent = "Editar modelo #" + m.id;
+}
+async function removerModelo(id) {
+  if (!confirm("Remover este modelo?")) return;
+  try { await api("/modelos/" + id, "DELETE"); aviso("Modelo removido."); carregarMarcasModelos(); }
+  catch (e) { aviso(e.message, true); }
+}
+function limparFormModelo() { $("form-modelo").reset(); $("m-id").value = ""; $("titulo-form-modelo").textContent = "Cadastrar modelo"; }
+$("m-cancelar").onclick = limparFormModelo;
+
+// ---------- Marcas ----------
+function desenharMarcas() {
+  $("tabela-marcas").innerHTML = marcas.map(m => `
+    <tr><td>${m.id}</td><td>${esc(m.nome)}</td><td>${esc(m.paisOrigem)}</td>
+      <td class="acoes">
+        <button class="btn sec peq" onclick="editarMarca(${m.id})">Editar</button>
+        <button class="btn perigo peq" onclick="removerMarca(${m.id})">Excluir</button>
+      </td></tr>`).join("") || `<tr><td colspan="4">Nenhuma marca cadastrada.</td></tr>`;
+}
+$("form-marca").onsubmit = async ev => {
+  ev.preventDefault();
+  const id = $("ma-id").value;
+  const corpo = { nome: $("ma-nome").value, paisOrigem: $("ma-pais").value };
+  try {
+    if (id) await api("/marcas/" + id, "PUT", corpo); else await api("/marcas", "POST", corpo);
+    aviso("Marca salva!"); limparFormMarca(); await carregarMarcasModelos(); carregarVeiculos();
+  } catch (e) { aviso(e.message, true); }
+};
+function editarMarca(id) {
+  const m = marcas.find(x => x.id === id);
+  $("ma-id").value = m.id; $("ma-nome").value = m.nome; $("ma-pais").value = m.paisOrigem || "";
+  $("titulo-form-marca").textContent = "Editar marca #" + m.id;
+}
+async function removerMarca(id) {
+  if (!confirm("Remover esta marca?")) return;
+  try { await api("/marcas/" + id, "DELETE"); aviso("Marca removida."); carregarMarcasModelos(); }
+  catch (e) { aviso(e.message, true); }
+}
+function limparFormMarca() { $("form-marca").reset(); $("ma-id").value = ""; $("titulo-form-marca").textContent = "Cadastrar marca"; }
+$("ma-cancelar").onclick = limparFormMarca;
+
+// ---------- Início ----------
+opcoes($("m-tipo"), TIPOS, t => t, t => t);
+opcoes($("f-tipo"), TIPOS, t => t, t => t, "Todos");
+opcoes($("v-status"), STATUS, s => s, s => s);
+opcoes($("f-status"), STATUS, s => s, s => s, "Todos");
+carregarMarcasModelos()
+  .then(carregarVeiculos)
+  .catch(e => aviso("Não foi possível conectar à API: " + e.message, true));
+</script>
+</body>
+</html>
